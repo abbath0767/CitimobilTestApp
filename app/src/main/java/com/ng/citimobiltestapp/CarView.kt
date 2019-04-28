@@ -64,6 +64,11 @@ class CarView : View {
         }
     }
 
+    /**
+     * method for start move of car to x/y coord. Using value animator
+     * @param   toX   - the coord of final point in x.
+     * @param   toY   - the coord of final point in y
+     */
     private fun startMove(toX: Float, toY: Float) {
         carIsMove = true
         val pairControl = getControlPoint()
@@ -77,7 +82,6 @@ class CarView : View {
                 carX = calcBezier(it.animatedValue as Float, tmpCarX, cx, toX)
                 carY = calcBezier(it.animatedValue as Float, tmpCarY, cy, toY)
                 carAngle = calcAngle(it.animatedValue as Float, tmpCarX, -tmpCarY, cx, -cy, toX, -toY)
-//                log("car angle: $carAngle")
                 postInvalidateOnAnimation()
             }
             addListener(
@@ -93,6 +97,22 @@ class CarView : View {
         }
     }
 
+    /**
+     * method for calculate control point.
+     * Control point is a point where cross the current car linear function and
+     * potential border function. Border can change, in this realization the borders is border of phone screen
+     * Car always have current position (x, y) and angle (car looks up - is 90 degree, looks right - is 0 degree)
+     * and with this data we can make linear function - y = kx + b, where k and b - variables define
+     * the form of a straight.
+     * Param k possible calculate of tan current angle:
+     * https://en.wikipedia.org/wiki/Slope
+     * Param B possible calculate from linear function, as we all know k, we know x and y for each
+     * case. For example: top border is line where y = 0 always and x is value from -Infinity to +Infinity,
+     * but the value will be enough any x, for example value of current screen width, and etc.
+     * P.S. Carefully, all calculated keep in mind that the value of the point (0,0) is the upper left corner,
+     * not bottom left!
+     * @return  the value of calculated control point
+     */
     private fun getControlPoint(): Pair<Float, Float> {
         val k = Math.tan(Math.toRadians(carAngle))
         val b = -carY - k * carX
@@ -197,6 +217,13 @@ class CarView : View {
         return cX to cY
     }
 
+    /**
+     * calculate distance between entered point and current car position. root of the sum square
+
+     * @param   x     - the point x coord
+     * @param   y     - the point y coord
+     * @return  the value of distance
+     */
     private fun calculateDistance(x: Float, y: Float): Double {
         return Math.sqrt(Math.pow((carX - x).toDouble(), 2.0) + Math.pow((carY - y).toDouble(), 2.0))
     }
@@ -209,6 +236,15 @@ class CarView : View {
         return height.toFloat()
     }
 
+    /**
+     * move of car - simple quadratic bezier function with 3 point
+     * https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Quadratic_B%C3%A9zier_curves
+     * @param   time   - the time from start.
+     * @param   p0     - the start point
+     * @param   p1     - the control point
+     * @param   p2     - the end point
+     * @return  the value of current position with entered time value
+     */
     private fun calcBezier(time: Float, p0: Float, p1: Float, p2: Float): Float {
         return (
                 Math.pow((1 - time).toDouble(), 2.0) * p0
@@ -218,6 +254,18 @@ class CarView : View {
 
     }
 
+    /**
+     * move of car - simple quadratic bezier function with 3 point
+     * https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Quadratic_B%C3%A9zier_curves
+     * @param   time   - the time from start.
+     * @param   p0x     - the start point x coord
+     * @param   p0y     - the start point y coord
+     * @param   p1x     - the control point x coord
+     * @param   p1y     - the control point y coord
+     * @param   p2x     - the end point x coord
+     * @param   p2y     - the end point y coord
+     * @return  the value of current angle of the car with entered time value
+     */
     private fun calcAngle(time: Float, p0x: Float, p0y: Float, p1x: Float, p1y: Float, p2x: Float, p2y: Float): Double {
         val t = 1.0f - time
         val dx = ((t * p1x + time * p2x) - (t * p0x + time * p1x)).toDouble()

@@ -5,6 +5,7 @@ import android.animation.TimeInterpolator
 /**
  * this sigmoid function reflects a more realistic and smooth acceleration and deceleration
  * process (in our case, time and speed dependences) with params c = 0.5 and a = 10.0
+ * https://en.wikipedia.org/wiki/Sigmoid_function
  */
 class SigmoidInterpolator : TimeInterpolator {
 
