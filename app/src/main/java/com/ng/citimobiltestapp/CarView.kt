@@ -5,8 +5,10 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.TimeInterpolator
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Paint
+import android.graphics.Matrix
+import android.graphics.drawable.BitmapDrawable
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -25,34 +27,36 @@ class CarView : View {
     private var tmpCarX = 0f
     private var carY = 0f
     private var tmpCarY = 0f
-    private var carAngle = 330.0
+    private var carAngle = 90.0
     private var carIsMove = false
 
-    private lateinit var carPaint: Paint
-    private lateinit var arrowPaint: Paint
     private lateinit var interpolator: TimeInterpolator
-    private val arrowLen = 30f
+    private lateinit var carBitmap: Bitmap
+    private lateinit var carMatrix: Matrix
 
     private fun initView() {
-        carPaint = Paint().apply {
-            color = R.color.yellow.asColor()
-            style = Paint.Style.FILL
-            isAntiAlias = true
-        }
-        arrowPaint = Paint().apply {
-            color = R.color.black.asColor()
-            style = Paint.Style.STROKE
-            strokeWidth = R.dimen.common_2.dimen()
-            isAntiAlias = true
-        }
         interpolator = SigmoidInterpolator()
+
+        val d = resources.getDrawable(R.drawable.ic_car_icon_top, null)
+        val bm: Bitmap
+        if (d is BitmapDrawable) {
+            bm = d.bitmap
+        } else {
+            bm = Bitmap.createBitmap(d.intrinsicWidth, d.intrinsicHeight, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bm)
+            d.setBounds(0, 0, canvas.width, canvas.height)
+            d.draw(canvas)
+        }
+        carBitmap = Bitmap.createScaledBitmap(bm, bm.width / 2, bm.height / 2, false)
+
+        carMatrix = Matrix()
     }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawCircle(carX, carY, 20f, carPaint)
-        val stopX = (carX + Math.cos(Math.toRadians(carAngle)) * arrowLen).toFloat()
-        val stopY = (carY - Math.sin(Math.toRadians(carAngle)) * arrowLen).toFloat()
-        canvas.drawLine(carX, carY, stopX, stopY, arrowPaint)
+        carMatrix.reset()
+        carMatrix.setRotate((90 - carAngle).toFloat(), carBitmap.width / 2f, carBitmap.height / 2f)
+        carMatrix.postTranslate(carX - carBitmap.width / 2f, carY - carBitmap.height / 2f)
+        canvas.drawBitmap(carBitmap, carMatrix, null)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -246,11 +250,9 @@ class CarView : View {
      * @return  the value of current position with entered time value
      */
     private fun calcBezier(time: Float, p0: Float, p1: Float, p2: Float): Float {
-        return (
-                Math.pow((1 - time).toDouble(), 2.0) * p0
-                        + (2f * (1 - time) * time * p1).toDouble()
-                        + Math.pow(time.toDouble(), 2.0) * p2
-                ).toFloat()
+        return (Math.pow((1 - time).toDouble(), 2.0) * p0
+                + (2f * (1 - time) * time * p1).toDouble()
+                + Math.pow(time.toDouble(), 2.0) * p2).toFloat()
 
     }
 
@@ -276,6 +278,9 @@ class CarView : View {
         return theta
     }
 
+    /**
+     * find default car position
+     */
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         if (!startCoordIsInit) {
             val width = MeasureSpec.getSize(widthMeasureSpec)
